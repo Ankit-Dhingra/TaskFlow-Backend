@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const UserModel = require("../Schema/User");
 const JWT = require("jsonwebtoken");
+const { userAuth } = require("../connections/middleware/auth");
 const authRouter = express.Router();
 
 authRouter.get("/health", async (req, res) => {
@@ -42,11 +43,18 @@ authRouter.post("/signup", async (req, res) => {
 
     console.log("Data Saved Successfully");
 
-    const token = JWT.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = JWT.sign(
+      {
+        id: newUser._id,
+        name: newUser.firstName + " " + newUser.lastName,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
 
-    res.cookie("AuthToken", token , {
+    res.cookie("AuthToken", token, {
       expires: new Date(Date.now() + 8 * 3600000),
     });
 
@@ -66,7 +74,7 @@ authRouter.post("/signup", async (req, res) => {
     console.log("error in signup user", error);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
 });
@@ -99,11 +107,18 @@ authRouter.post("/login", async (req, res) => {
       });
     }
 
-    const token = JWT.sign({ id: existingUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = JWT.sign(
+      {
+        id: existingUser._id,
+        name: existingUser.firstName + " " + existingUser.lastName,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
 
-    res.cookie("AuthToken", token , {
+    res.cookie("AuthToken", token, {
       expires: new Date(Date.now() + 8 * 3600000),
     });
 
@@ -127,6 +142,35 @@ authRouter.post("/login", async (req, res) => {
       message: "Internal Server Error",
     });
   }
+});
+
+authRouter.get("/isLoggedIn", (req, res) => {
+  const token = req.cookies.AuthToken;
+
+  if (!token) {
+    return res.json({ loggedIn: false });
+  }
+
+  try {
+    const decoded = JWT.verify(token, process.env.JWT_SECRET);
+
+    return res.json({
+      loggedIn: true,
+      username: decoded.name,
+    });
+  } catch (err) {
+    return res.json({ loggedIn: false });
+  }
+});
+
+authRouter.post("/logout", userAuth, async (req, res) => {
+  res.clearCookie("AuthToken", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+  });
+
+  res.json({ success: true, message: "Logged out" });
 });
 
 module.exports = authRouter;

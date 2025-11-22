@@ -16,7 +16,7 @@ app.use(helmet()); // Secure HTTP headers
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"], // your frontend
+    origin: ["http://localhost:5173"], // your frontend
     credentials: true,
   })
 );
@@ -25,7 +25,7 @@ app.use(
 /* -------------------- RATE LIMITING -------------------- */
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 100, // limit each IP
+  max: 1000, // limit each IP
   message: "Too many requests, try again later.",
 });
 

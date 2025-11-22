@@ -97,8 +97,8 @@ taskRouter.get("/getAllTasks", userAuth, async (req, res) => {
     ]);
 
     if (totalTasks === 0) {
-      return res.status(404).json({
-        success: false,
+      return res.status(200).json({
+        success: true,
         message: "No Task found",
       });
     }
